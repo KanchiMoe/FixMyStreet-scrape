@@ -86,35 +86,42 @@ def get_council_sentto(council_tag, data):
     logging.debug("Getting the council the report was sent to...")
 
     text = council_tag.get_text()
-    text = " ".join(text.split())  # Normalize all whitespace
+    text = " ".join(text.split())  # Normalize whitespace
 
+    # Edge case: not reported
     if "Not reported to council" in text:
-        NRTC = "Not reported to council"
-        logging.warning(f"Detected '{NRTC}'. This has been set as the council in the DB.")
-        data["council"] = NRTC
+        data["council"] = "Not reported to council"
+        logging.warning("Detected 'Not reported to council'")
         return data
 
-    # Check if it's a "Council ref" instead of "Sent to"
-    if "Council ref:" in text:
+    # Edge case: council ref only
+    if "Council ref:" in text and "Sent to" not in text:
         council_ref = text.split("Council ref:")[1].strip()
         council_name = f"Council ref: {council_ref}"
         logging.info(f"Council ref detected: {council_name}")
         data["council"] = council_name
         return data
 
-    # Improved regex: stops before timing info or 'FixMyStreet ref'
+    # Prefer linked council name
+    a_tag = council_tag.find("a")
+    if a_tag:
+        council_name = a_tag.get_text(strip=True)
+        logging.info(f"Council (via link): {council_name}")
+        data["council"] = council_name
+        return data
+
+    # Fallback regex if no <a> tag
     match = re.search(r"Sent to\s*(.+?)\s+(?:\d+|less than a minute|\w+ minutes|\w+ hours|\w+ days|FixMyStreet)", text)
-    if not match:
-        msg = f"Could not extract council name from text: {text}"
-        logging.critical(msg)
-        raise ValueError(msg)
+    if match:
+        council_name = match.group(1).strip()
+        logging.info(f"Council (via regex): {council_name}")
+        data["council"] = council_name
+        return data
 
-    council_name = match.group(1).strip()
-
-    # No need to add "Council" manually
-    logging.info(f"Council: {council_name}")
-    data["council"] = council_name
-    return data
+    # Fail if all else fails
+    msg = f"Could not extract council name from text: {text}"
+    logging.critical(msg)
+    raise ValueError(msg)
 
 def get_title(side_report, data):
     logging.debug("Getting the report title...")
