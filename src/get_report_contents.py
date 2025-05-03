@@ -46,23 +46,28 @@ def get_timestamp(meta_tag, data):
 
     text = meta_tag.get_text(strip=True)
 
-    match = re.search(r"at (\d{1,2}:\d{2},\s\w+\s+\d{1,2}\s+\w+\s+\d{4})", text)
-    if not match:
-        raise ValueError(f"Could not parse timestamp from meta info text: {text}")
+    # Try full datetime first
+    match = re.search(r"at (\d{1,2}:\d{2},\s(?:\w+)\s+\d{1,2}\s+\w+\s+\d{4})", text)
+    if match:
+        time_str = match.group(1)
+        logging.debug(f"Reported timestamp (raw): {time_str}")
+        try:
+            parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
+        except ValueError:
+            parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
+        logging.info(f"Parsed timestamp: {parsed_time}")
+        data["timestamp"] = parsed_time
+        return data
 
-    time_str = match.group(1)
-    logging.debug(f"Reported timestamp (raw): {time_str}")
+    # Try matching partial (e.g., just weekday)
+    match_partial = re.search(r"at (\d{1,2}:\d{2},\s\w+)", text)
+    if match_partial:
+        time_str = match_partial.group(1)
+        logging.warning(f"Partial timestamp found (weekday only): {time_str}. Skipping precise datetime.")
+        data["timestamp"] = None  # or set a fallback if needed
+        return data
 
-    # Try full weekday name first, then abbreviated
-    try:
-        parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
-    except ValueError:
-        parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
-
-    logging.info(f"Parsed timestamp: {parsed_time}")
-
-    data["timestamp"] = parsed_time
-    return data
+    raise ValueError(f"Could not parse timestamp from meta info text: {text}")
 
 def get_category(meta_tag, data):
     logging.debug("Getting category...")
