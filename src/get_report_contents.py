@@ -46,8 +46,8 @@ def get_timestamp(meta_tag, data):
 
     text = meta_tag.get_text(strip=True)
 
-    # Extract only the timestamp
-    match = re.search(r"at (\d{1,2}:\d{2},\s\w{3}\s+\d{1,2}\s+\w+\s+\d{4})", text)
+    # Extract the full timestamp
+    match = re.search(r"at (\d{1,2}:\d{2},\s\w+\s+\d{1,2}\s+\w+\s+\d{4})", text)
     if not match:
         raise ValueError(f"Could not parse timestamp from meta info text: {text}")
     
@@ -55,7 +55,7 @@ def get_timestamp(meta_tag, data):
     logging.debug(f"Reported timestamp (raw): {time_str}")
 
     # Convert to datetime object
-    parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
+    parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
     logging.info(f"Parsed timestamp: {parsed_time}")
 
     data["timestamp"] = parsed_time
