@@ -54,23 +54,23 @@ def insert_details(number: int, category: str, title: str, description: str):
         psql.commit()
     return None
 
-def insert_location(number: int, lat: int, lon: int):
+def insert_location(number: int, lat: int, lon: int, council: str):
     logging.debug("Writing location to DB...")
     with psycopg2.connect() as psql:
         cursor = psql.cursor(cursor_factory=DictCursor)
         cursor.execute(
             """
-            INSERT INTO location (id, latitude, longitude)
+            INSERT INTO location (id, latitude, longitude, council)
             VALUES (%s, %s, %s)
             """,
-            (number, lat, lon)
+            (number, lat, lon, council)
         )
 
 def SQL_insert_into_db(data):
     
     insert_status(data["number"], data["status"], data["timestamp"], data["editable"])
     insert_details(data["number"], data["category"], data["title"], data["description"])
-    insert_location(data["number"], data["lat"], data["lon"],)
+    insert_location(data["number"], data["lat"], data["lon"], data["council"])
     return None
 
 # council
