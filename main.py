@@ -16,7 +16,7 @@ load_dotenv()
 colourlog.setup_logger()
 
 TRUNCATE_DB_TABLES = True
-UPPER_NUMBER = 7519100
+UPPER_NUMBER = 7519450
 USE_RANDOM = True  # Set to True to use random numbers
 
 def get_random_number():
