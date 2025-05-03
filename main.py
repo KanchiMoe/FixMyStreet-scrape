@@ -30,7 +30,7 @@ colourlog.setup_logger()
 
 
 TRUNCATE_DB_TABLES = True
-UPPER_NUMBER = 1 + 1000
+UPPER_NUMBER = 1 + 7519070
 
 
 
