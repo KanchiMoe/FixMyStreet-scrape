@@ -28,7 +28,8 @@ def get_report_page(random_number):
             "title": "N/a - HTTP 404, Not Found",
             "description": "N/a - HTTP 404, Not Found",
             "lat": 0.0,
-            "lon": 0.0
+            "lon": 0.0,
+            "council": "N/a"
             }
         )
         return "404"
@@ -44,7 +45,8 @@ def get_report_page(random_number):
             "title": "N/a - HTTP 403, Forbidden",
             "description": "N/a - HTTP 403, Forbidden",
             "lat": 0.0,
-            "lon": 0.0
+            "lon": 0.0,
+            "council": "N/a"
             }
         )
         return "403"
@@ -61,7 +63,8 @@ def get_report_page(random_number):
             "title": "N/a - HTTP 410, Gone",
             "description": "N/a - HTTP 404, Not Found",
             "lat": 0.0,
-            "lon": 0.0
+            "lon": 0.0,
+            "council": "N/a"
             }
         )
         return "410"
