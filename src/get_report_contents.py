@@ -12,19 +12,23 @@ def get_status(side_report, data):
         if "banner--unknown" in classes:
             logging.info("Report status is UNKNOWN")
             data["status"] = "Unknown"
-
         elif "banner--fixed" in classes:
             logging.info("Report status is FIXED")
             data["status"] = "Fixed"
-
         elif "banner--closed" in classes:
             logging.info("Report status is CLOSED")
             data["status"] = "Closed"
-
+        elif "banner--progress" in classes:
+            logging.info("Report status is INVESTIGATING")
+            data["status"] = "Investigating"
         else:
             msg = f"Unexpected banner status class: {classes}"
             logging.critical(msg)
             raise ValueError(msg)
+    else:
+        msg = "No status banner found on the page"
+        logging.warning(msg)
+        data["status"] = "Unknown"
 
     return data
 
