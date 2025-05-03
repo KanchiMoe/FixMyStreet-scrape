@@ -16,6 +16,7 @@ def get_report_page(random_number):
 
     if response.status_code == 200:
         return response.content
+
     elif response.status_code == 404:
         logging.warning("Response was 404")
         src.SQL_insert_into_db({
@@ -31,6 +32,23 @@ def get_report_page(random_number):
             }
         )
         return "404"
+    
+    elif response.status_code == 403:
+        logging.warning("Response was 403")
+        src.SQL_insert_into_db({
+            "number": random_number,
+            "status": "N/a - 404",
+            "editable": False,
+            "timestamp": None,
+            "category": "N/a - 403",
+            "title": "N/a - HTTP 403, Forbidden",
+            "description": "N/a - HTTP 403, Forbidden",
+            "lat": 0.0,
+            "lon": 0.0
+            }
+        )
+        return "403"
+
 
     elif response.status_code == 410:
         logging.warning("Response was 410")     

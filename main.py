@@ -34,7 +34,7 @@ def scrape_fms(number: int):
     # Get the report page
     response_content = src.get_report_page(data["number"])
 
-    if response_content in ("404", "410"):
+    if response_content in ("404", "403", "410"):
         msg = f"Response code was {response_content}. Entry recorded, nothing more to process. Moving on..."
         logging.warning(msg)
         time.sleep(1)
