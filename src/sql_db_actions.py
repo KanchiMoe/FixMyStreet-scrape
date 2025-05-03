@@ -14,6 +14,7 @@ def truncate(bool):
                 TRUNCATE TABLE "public"."details";
                 TRUNCATE TABLE "public"."status";
                 TRUNCATE TABLE "public"."location";
+                TRUNCATE TABLE "public"."method";
                 """,
                 ()
             )
@@ -66,9 +67,22 @@ def insert_location(number: int, lat: int, lon: int, council: str):
             (number, lat, lon, council)
         )
 
+def insert_methods(number: int, method: str):
+    logging.debug("Writing method to DB...")
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            INSERT INTO method (id, method)
+            VALUES (%s, %s)
+            """,
+            (number, method)
+        )
+
 def SQL_insert_into_db(data):
     
     insert_status(data["number"], data["status"], data["timestamp"], data["editable"])
     insert_details(data["number"], data["category"], data["title"], data["description"])
     insert_location(data["number"], data["lat"], data["lon"], data["council"])
+    insert_methods(data["number"], data["method"])
     return None

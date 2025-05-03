@@ -192,6 +192,21 @@ def get_lat_lon(side_report, data):
 
     return data
 
+def get_method(meta_tag, data):
+    logging.debug("Getting report method...")
+
+    text = meta_tag.get_text(strip=True)
+
+    match = re.search(r"Reported via (\w+)", text)
+    if match:
+        method = match.group(1)
+        logging.info(f"Report method: {method}")
+        data["method"] = method
+    else:
+        logging.warning(f"No method found in meta info: {text}")
+        data["method"] = "N/a"
+
+    return data
 
 def process_report_content(content, data):
     logging.debug("Processing contents...")
@@ -224,6 +239,7 @@ def process_report_content(content, data):
     data = get_title(side_report, data)
     data = get_description(side_report, data)
     data = get_lat_lon(side_report, data)
+    data = get_method(meta_tag, data)
 
     logging.debug(f"Returning data: {data}")
     return data
