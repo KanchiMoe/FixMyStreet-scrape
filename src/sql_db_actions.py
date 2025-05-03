@@ -72,25 +72,3 @@ def SQL_insert_into_db(data):
     insert_details(data["number"], data["category"], data["title"], data["description"])
     insert_location(data["number"], data["lat"], data["lon"], data["council"])
     return None
-
-# council
-
-
-
-
-# def SQL_insert_into_db(number, status, category, timestamp, council, title):
-#     with psycopg2.connect() as psql:
-#         cursor = psql.cursor(cursor_factory=DictCursor)
-
-#         cursor.execute(
-#             """
-#             INSERT INTO fms (id, status, category, reported_timestamp, council, title)
-#             VALUES (%s, %s, %s, %s, %s, %s)
-#             """,
-#             (number, status, category, timestamp, council, title)
-#             )  
-#         psql.commit()
-
-
-# #cursor.execute("INSERT INTO fms (id, status, category, reported_timestamp, council, title) VALUES (%s, %s, %s, %s, %s, %s)", (number, status, category, timestamp, council, title))
-        
