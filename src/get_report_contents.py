@@ -69,9 +69,9 @@ def get_category(meta_tag, data):
 
     text = meta_tag.get_text(strip=True)
     
-    match = re.search(r"Reported in the (.*?) category", text)
+    # Allow optional "via ... " part
+    match = re.search(r"Reported(?: via \w+)? in the (.*?) category", text)
     if not match:
-        # Some reports may not have categories. Warn, set as none and move on.
         logging.warning(f"Category not found in meta info: {text}")
         data["category"] = "N/a"
         return data
