@@ -93,11 +93,13 @@ def get_council_sentto(council_tag, data, meta_tag=None):
     text = council_tag.get_text()
     text = " ".join(text.split())  # Normalize whitespace
 
+    # Edge case: not reported
     if "Not reported to council" in text:
         data["council"] = "Not reported to council"
         logging.warning("Detected 'Not reported to council'")
         return data
 
+    # Edge case: council ref only
     if "Council ref:" in text and "Sent to" not in text:
         council_ref = text.split("Council ref:")[1].strip()
         council_name = f"Council ref: {council_ref}"
@@ -105,6 +107,7 @@ def get_council_sentto(council_tag, data, meta_tag=None):
         data["council"] = council_name
         return data
 
+    # Edge case: council name in hyperlink
     a_tag = council_tag.find("a")
     if a_tag:
         council_name = a_tag.get_text(strip=True)
@@ -112,6 +115,7 @@ def get_council_sentto(council_tag, data, meta_tag=None):
         data["council"] = council_name
         return data
 
+    # Fallback regex if no <a> tag
     match = re.search(r"Sent to\s*(.+?)\s+(?:\d+|less than a minute|\w+ minutes|\w+ hours|\w+ days|FixMyStreet)", text)
     if match:
         council_name = match.group(1).strip()
