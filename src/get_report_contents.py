@@ -82,19 +82,17 @@ def get_category(meta_tag, data):
     data["category"] = category
     return data
 
-def get_council_sentto(council_tag, data):
+def get_council_sentto(council_tag, data, meta_tag=None):
     logging.debug("Getting the council the report was sent to...")
 
     text = council_tag.get_text()
     text = " ".join(text.split())  # Normalize whitespace
 
-    # Edge case: not reported
     if "Not reported to council" in text:
         data["council"] = "Not reported to council"
         logging.warning("Detected 'Not reported to council'")
         return data
 
-    # Edge case: council ref only
     if "Council ref:" in text and "Sent to" not in text:
         council_ref = text.split("Council ref:")[1].strip()
         council_name = f"Council ref: {council_ref}"
@@ -102,7 +100,6 @@ def get_council_sentto(council_tag, data):
         data["council"] = council_name
         return data
 
-    # Prefer linked council name
     a_tag = council_tag.find("a")
     if a_tag:
         council_name = a_tag.get_text(strip=True)
@@ -110,7 +107,6 @@ def get_council_sentto(council_tag, data):
         data["council"] = council_name
         return data
 
-    # Fallback regex if no <a> tag
     match = re.search(r"Sent to\s*(.+?)\s+(?:\d+|less than a minute|\w+ minutes|\w+ hours|\w+ days|FixMyStreet)", text)
     if match:
         council_name = match.group(1).strip()
@@ -118,10 +114,21 @@ def get_council_sentto(council_tag, data):
         data["council"] = council_name
         return data
 
+    # new: fallback from meta_tag
+    if meta_tag:
+        meta_text = meta_tag.get_text(strip=True)
+        meta_match = re.search(r"by (.+?) at", meta_text)
+        if meta_match:
+            council_name = meta_match.group(1).strip()
+            logging.info(f"Council (via report_meta_info): {council_name}")
+            data["council"] = council_name
+            return data
+
     # Fail if all else fails
     msg = f"Could not extract council name from text: {text}"
     logging.critical(msg)
     raise ValueError(msg)
+
 
 def get_title(side_report, data):
     logging.debug("Getting the report title...")
@@ -213,7 +220,7 @@ def process_report_content(content, data):
     data = get_editable(side_report, data)
     data = get_timestamp(meta_tag, data)
     data = get_category(meta_tag, data)
-    data = get_council_sentto(council_tag, data)
+    data = get_council_sentto(council_tag, data, meta_tag)
     data = get_title(side_report, data)
     data = get_description(side_report, data)
     data = get_lat_lon(side_report, data)
