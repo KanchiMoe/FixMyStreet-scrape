@@ -91,6 +91,14 @@ def get_council_sentto(council_tag, data):
         data["council"] = NRTC
         return data
 
+    # Check if it's a "Council ref" instead of "Sent to"
+    if "Council ref:" in text:
+        council_ref = text.split("Council ref:")[1].strip()
+        council_name = f"Council ref: {council_ref}"
+        logging.info(f"Council ref detected: {council_name}")
+        data["council"] = council_name
+        return data
+
     # Improved regex: stops before timing info or 'FixMyStreet ref'
     match = re.search(r"Sent to\s*(.+?)\s+(?:\d+|less than a minute|\w+ minutes|\w+ hours|\w+ days|FixMyStreet)", text)
     if not match:
