@@ -61,7 +61,7 @@ def insert_location(number: int, lat: int, lon: int, council: str):
         cursor.execute(
             """
             INSERT INTO location (id, latitude, longitude, council)
-            VALUES (%s, %s, %s)
+            VALUES (%s, %s, %s, %s)
             """,
             (number, lat, lon, council)
         )
