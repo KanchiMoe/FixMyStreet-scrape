@@ -7,11 +7,12 @@ import os
 import random
 import time
 
+load_dotenv()
+
+# Set logging variables
 DEFAULT_LOG_LEVEL = os.environ.get("LOG_LEVEL") or logging.DEBUG
 logging.getLogger().setLevel(DEFAULT_LOG_LEVEL)
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
-
-load_dotenv()
 
 colourlog.setup_logger()
 
@@ -34,6 +35,7 @@ def scrape_fms(number: int):
     # Get the report page
     response_content = src.get_report_page(data["number"])
 
+    # Escape if response was anything but 200
     if response_content in ("404", "403", "410"):
         msg = f"Response code was {response_content}. Entry recorded, nothing more to process. Moving on..."
         logging.warning(msg)

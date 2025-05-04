@@ -57,7 +57,6 @@ def get_report_page(random_number):
         )
         return "403"
 
-
     elif response.status_code == 410:
         logging.warning("Response was 410")     
         src.SQL_insert_into_db({

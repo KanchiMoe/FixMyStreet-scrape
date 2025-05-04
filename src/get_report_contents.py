@@ -315,12 +315,3 @@ def process_report_content(content, data):
 
     logging.debug(f"Returning data: {data}")
     return data
-
-    
-
-
-
-
-
-
-    
