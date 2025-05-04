@@ -234,22 +234,26 @@ def get_update_timestamp(updates_tag):
         for tag in reversed(meta_tags):
             text = tag.get_text(strip=True)
             logging.debug(f"Checking update meta text: {text}")
-            match = re.search(r"at (\d{1,2}:\d{2},\s(?:\w+)\s+\d{1,2}\s+\w+\s+\d{4})", text)
+            # Match both formats: with or without 'at'
+            match = re.search(r"(?:(?:at\s)?)(\d{1,2}:\d{2}),\s+(\w{3,9})\s+(\d{1,2})\s+(\w+)\s+(\d{4})", text)
             if match:
-                time_str = match.group(1)
+                time_str = f"{match.group(1)}, {match.group(2)} {match.group(3)} {match.group(4)} {match.group(5)}"
                 try:
-                    try:
-                        parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
-                    except ValueError:
-                        parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
+                    parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
                     logging.info(f"Latest update timestamp parsed: {parsed_time}")
                     return parsed_time
-                except Exception as e:
-                    logging.warning(f"Failed to parse timestamp '{time_str}': {e}")
+                except ValueError as e:
+                    try:
+                        parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
+                        logging.info(f"Latest update timestamp parsed: {parsed_time}")
+                        return parsed_time
+                    except Exception as e2:
+                        logging.warning(f"Failed to parse timestamp '{time_str}': {e2}")
+                        continue
 
-    logging.warning("No valid timestamp found in updates.")
-    return None
-
+    msg = "No valid update timestamp found in updates."
+    logging.critical(msg)
+    raise ValueError(msg)
 
 def get_updates(updates_tag, data):
     logging.debug("Getting updates...")
