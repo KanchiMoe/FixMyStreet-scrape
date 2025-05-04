@@ -217,6 +217,61 @@ def get_method(meta_tag, data):
 
     return data
 
+def get_update_count(updates_tag):
+    logging.debug("Counting update items...")
+    update_items = updates_tag.find_all("li", class_="item-list__item--updates")
+    count = len(update_items)
+    logging.info(f"Found {count} update(s).")
+    return count
+
+def get_update_timestamp(updates_tag):
+    logging.debug("Looking for the latest update timestamp...")
+
+    update_items = updates_tag.find_all("li", class_="item-list__item--updates")
+
+    for item in reversed(update_items):
+        meta_tags = item.find_all("p", class_="meta-2")
+        for tag in reversed(meta_tags):
+            text = tag.get_text(strip=True)
+            logging.debug(f"Checking update meta text: {text}")
+            match = re.search(r"at (\d{1,2}:\d{2},\s(?:\w+)\s+\d{1,2}\s+\w+\s+\d{4})", text)
+            if match:
+                time_str = match.group(1)
+                try:
+                    try:
+                        parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
+                    except ValueError:
+                        parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
+                    logging.info(f"Latest update timestamp parsed: {parsed_time}")
+                    return parsed_time
+                except Exception as e:
+                    logging.warning(f"Failed to parse timestamp '{time_str}': {e}")
+
+    logging.warning("No valid timestamp found in updates.")
+    return None
+
+
+def get_updates(updates_tag, data):
+    logging.debug("Getting updates...")
+
+    if not updates_tag:
+        logging.warning("No updates_tag provided. Defaulting to 0 updates.")
+        data["updates"] = 0
+        data["latest_update"] = None
+        return data
+
+    count = get_update_count(updates_tag)
+    if count is None:
+        msg = "Updates count is 'None'"
+        logging.critical(msg)
+        raise ValueError(msg)
+
+    data["updates"] = count
+    data["latest_update"] = get_update_timestamp(updates_tag)
+
+    return data
+
+
 def process_report_content(content, data):
     logging.debug("Processing contents...")
 
@@ -240,6 +295,13 @@ def process_report_content(content, data):
         logging.critical(msg)
         raise ValueError(msg)
     
+    updates_tag = soup.find("section", class_="full-width")
+    if not updates_tag:
+        msg = "No <section class='full-width'> (updates section) found"
+        logging.warning(msg)
+        data["updates"] = 0
+        data["latest_update"] = None
+   
     data = get_status(side_report, data)
     data = get_editable(side_report, data)
     data = get_timestamp(meta_tag, data)
@@ -249,6 +311,7 @@ def process_report_content(content, data):
     data = get_description(side_report, data)
     data = get_lat_lon(side_report, data)
     data = get_method(meta_tag, data)
+    data = get_updates(updates_tag, data)
 
     logging.debug(f"Returning data: {data}")
     return data

@@ -15,6 +15,7 @@ def truncate(bool):
                 TRUNCATE TABLE "public"."status";
                 TRUNCATE TABLE "public"."location";
                 TRUNCATE TABLE "public"."method";
+                TRUNCATE TABLE "public"."updates";
                 """,
                 ()
             )
@@ -79,10 +80,24 @@ def insert_methods(number: int, method: str):
             (number, method)
         )
 
+def insert_updates(number: int, no_of_updates, latest_update):
+    logging.debug("Writing updates to DB...")
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            INSERT INTO updates (id, no_of_updates, latest_timestamp)
+            VALUES (%s, %s, %s)
+            """,
+            (number, no_of_updates, latest_update)
+        )
+
 def SQL_insert_into_db(data):
     
     insert_status(data["number"], data["status"], data["timestamp"], data["editable"])
     insert_details(data["number"], data["category"], data["title"], data["description"])
     insert_location(data["number"], data["lat"], data["lon"], data["council"])
     insert_methods(data["number"], data["method"])
+    insert_updates(data["number"], data["updates"], data["latest_update"])
+
     return None

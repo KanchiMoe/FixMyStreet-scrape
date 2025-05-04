@@ -30,7 +30,9 @@ def get_report_page(random_number):
             "lat": 0.0,
             "lon": 0.0,
             "council": "N/a",
-            "method": "N/a - 404"
+            "method": "N/a - 404",
+            "updates": 0,
+            "latest_update": None,
             }
         )
         return "404"
@@ -48,7 +50,9 @@ def get_report_page(random_number):
             "lat": 0.0,
             "lon": 0.0,
             "council": "N/a",
-            "method": "N/a - 403"
+            "method": "N/a - 403",
+            "updates": 0,
+            "latest_update": None,
             }
         )
         return "403"
@@ -67,7 +71,9 @@ def get_report_page(random_number):
             "lat": 0.0,
             "lon": 0.0,
             "council": "N/a",
-            "method": "N/a - 410"
+            "method": "N/a - 410",
+            "updates": 0,
+            "latest_update": None,
             }
         )
         return "410"
