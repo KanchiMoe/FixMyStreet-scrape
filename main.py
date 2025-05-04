@@ -18,7 +18,7 @@ colourlog.setup_logger()
 TRUNCATE_DB_TABLES = True
 UPPER_NUMBER = 7519490
 USE_RANDOM = True  # Set to True to use random numbers
-FOOBAR = 2014736
+SINGLE_NUMBER = 2014736
 
 def scrape_fms(number: int):
     data = {"number": number}
@@ -48,9 +48,9 @@ def scrape_fms(number: int):
 def main():
     src.truncate(TRUNCATE_DB_TABLES)
 
-    if FOOBAR:
+    if SINGLE_NUMBER:
         logging.info("Only processing 1 number")
-        scrape_fms(FOOBAR)
+        scrape_fms(SINGLE_NUMBER)
         return
 
     if USE_RANDOM:
