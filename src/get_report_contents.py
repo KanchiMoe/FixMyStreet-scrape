@@ -12,19 +12,23 @@ def get_status(side_report, data):
         if "banner--unknown" in classes:
             logging.info("Report status is UNKNOWN")
             data["status"] = "Unknown"
-
         elif "banner--fixed" in classes:
             logging.info("Report status is FIXED")
             data["status"] = "Fixed"
-
         elif "banner--closed" in classes:
             logging.info("Report status is CLOSED")
             data["status"] = "Closed"
-
+        elif "banner--progress" in classes:
+            logging.info("Report status is INVESTIGATING")
+            data["status"] = "Investigating"
         else:
             msg = f"Unexpected banner status class: {classes}"
             logging.critical(msg)
             raise ValueError(msg)
+    else:
+        msg = "No status banner found on the page"
+        logging.warning(msg)
+        data["status"] = "Unknown"
 
     return data
 
@@ -42,29 +46,37 @@ def get_timestamp(meta_tag, data):
 
     text = meta_tag.get_text(strip=True)
 
-    # Extract only the timestamp
-    match = re.search(r"at (\d{1,2}:\d{2},\s\w{3}\s+\d{1,2}\s+\w+\s+\d{4})", text)
-    if not match:
-        raise ValueError(f"Could not parse timestamp from meta info text: {text}")
-    
-    time_str = match.group(1)
-    logging.debug(f"Reported timestamp (raw): {time_str}")
+    # Try full datetime first
+    match = re.search(r"at (\d{1,2}:\d{2},\s(?:\w+)\s+\d{1,2}\s+\w+\s+\d{4})", text)
+    if match:
+        time_str = match.group(1)
+        logging.debug(f"Reported timestamp (raw): {time_str}")
+        try:
+            parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
+        except ValueError:
+            parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
+        logging.info(f"Parsed timestamp: {parsed_time}")
+        data["timestamp"] = parsed_time
+        return data
 
-    # Convert to datetime object
-    parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
-    logging.info(f"Parsed timestamp: {parsed_time}")
+    # Try matching partial (e.g., just weekday)
+    match_partial = re.search(r"at (\d{1,2}:\d{2},\s\w+)", text)
+    if match_partial:
+        time_str = match_partial.group(1)
+        logging.warning(f"Partial timestamp found (weekday only): {time_str}. Skipping precise datetime.")
+        data["timestamp"] = None  # or set a fallback if needed
+        return data
 
-    data["timestamp"] = parsed_time
-    return data
+    raise ValueError(f"Could not parse timestamp from meta info text: {text}")
 
 def get_category(meta_tag, data):
     logging.debug("Getting category...")
 
     text = meta_tag.get_text(strip=True)
     
-    match = re.search(r"Reported in the (.*?) category", text)
+    # Allow optional "via ... " part
+    match = re.search(r"Reported(?: via \w+)? in the (.*?) category", text)
     if not match:
-        # Some reports may not have categories. Warn, set as none and move on.
         logging.warning(f"Category not found in meta info: {text}")
         data["category"] = "N/a"
         return data
@@ -75,31 +87,57 @@ def get_category(meta_tag, data):
     data["category"] = category
     return data
 
-def get_council_sentto(council_tag, data):
+def get_council_sentto(council_tag, data, meta_tag=None):
     logging.debug("Getting the council the report was sent to...")
 
     text = council_tag.get_text()
-    text = " ".join(text.split())  # Normalize all whitespace
+    text = " ".join(text.split())  # Normalize whitespace
 
+    # Edge case: not reported
     if "Not reported to council" in text:
-        NRTC = "Not reported to council"
-        logging.warning(f"Detected '{NRTC}'. This has been set as the council in the DB.")
-        data["council"] = NRTC
+        data["council"] = "Not reported to council"
+        logging.warning("Detected 'Not reported to council'")
         return data
 
-    # Improved regex: stops before timing info or 'FixMyStreet ref'
+    # Edge case: council ref only
+    if "Council ref:" in text and "Sent to" not in text:
+        council_ref = text.split("Council ref:")[1].strip()
+        council_name = f"Council ref: {council_ref}"
+        logging.info(f"Council ref detected: {council_name}")
+        data["council"] = council_name
+        return data
+
+    # Edge case: council name in hyperlink
+    a_tag = council_tag.find("a")
+    if a_tag:
+        council_name = a_tag.get_text(strip=True)
+        logging.info(f"Council (via link): {council_name}")
+        data["council"] = council_name
+        return data
+
+    # Fallback regex if no <a> tag
     match = re.search(r"Sent to\s*(.+?)\s+(?:\d+|less than a minute|\w+ minutes|\w+ hours|\w+ days|FixMyStreet)", text)
-    if not match:
-        msg = f"Could not extract council name from text: {text}"
-        logging.critical(msg)
-        raise ValueError(msg)
+    if match:
+        council_name = match.group(1).strip()
+        logging.info(f"Council (via regex): {council_name}")
+        data["council"] = council_name
+        return data
 
-    council_name = match.group(1).strip()
+    # new: fallback from meta_tag
+    if meta_tag:
+        meta_text = meta_tag.get_text(strip=True)
+        meta_match = re.search(r"by (.+?) at", meta_text)
+        if meta_match:
+            council_name = meta_match.group(1).strip()
+            logging.info(f"Council (via report_meta_info): {council_name}")
+            data["council"] = council_name
+            return data
 
-    # No need to add "Council" manually
-    logging.info(f"Council: {council_name}")
-    data["council"] = council_name
-    return data
+    # Fail if all else fails
+    msg = f"Could not extract council name from text: {text}"
+    logging.critical(msg)
+    raise ValueError(msg)
+
 
 def get_title(side_report, data):
     logging.debug("Getting the report title...")
@@ -163,6 +201,76 @@ def get_lat_lon(side_report, data):
 
     return data
 
+def get_method(meta_tag, data):
+    logging.debug("Getting report method...")
+
+    text = meta_tag.get_text(strip=True)
+
+    match = re.search(r"Reported via (\w+)", text)
+    if match:
+        method = match.group(1)
+        logging.info(f"Report method: {method}")
+        data["method"] = method
+    else:
+        logging.warning(f"No method found in meta info: {text}")
+        data["method"] = "N/a"
+
+    return data
+
+def get_update_count(updates_tag):
+    logging.debug("Counting update items...")
+    update_items = updates_tag.find_all("li", class_="item-list__item--updates")
+    count = len(update_items)
+    logging.info(f"Found {count} update(s).")
+    return count
+
+def get_update_timestamp(updates_tag):
+    logging.debug("Looking for the latest update timestamp...")
+
+    update_items = updates_tag.find_all("li", class_="item-list__item--updates")
+
+    for item in reversed(update_items):
+        meta_tags = item.find_all("p", class_="meta-2")
+        for tag in reversed(meta_tags):
+            text = tag.get_text(strip=True)
+            logging.debug(f"Checking update meta text: {text}")
+            match = re.search(r"at (\d{1,2}:\d{2},\s(?:\w+)\s+\d{1,2}\s+\w+\s+\d{4})", text)
+            if match:
+                time_str = match.group(1)
+                try:
+                    try:
+                        parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
+                    except ValueError:
+                        parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
+                    logging.info(f"Latest update timestamp parsed: {parsed_time}")
+                    return parsed_time
+                except Exception as e:
+                    logging.warning(f"Failed to parse timestamp '{time_str}': {e}")
+
+    logging.warning("No valid timestamp found in updates.")
+    return None
+
+
+def get_updates(updates_tag, data):
+    logging.debug("Getting updates...")
+
+    if not updates_tag:
+        logging.warning("No updates_tag provided. Defaulting to 0 updates.")
+        data["updates"] = 0
+        data["latest_update"] = None
+        return data
+
+    count = get_update_count(updates_tag)
+    if count is None:
+        msg = "Updates count is 'None'"
+        logging.critical(msg)
+        raise ValueError(msg)
+
+    data["updates"] = count
+    data["latest_update"] = get_update_timestamp(updates_tag)
+
+    return data
+
 
 def process_report_content(content, data):
     logging.debug("Processing contents...")
@@ -187,14 +295,23 @@ def process_report_content(content, data):
         logging.critical(msg)
         raise ValueError(msg)
     
+    updates_tag = soup.find("section", class_="full-width")
+    if not updates_tag:
+        msg = "No <section class='full-width'> (updates section) found"
+        logging.warning(msg)
+        data["updates"] = 0
+        data["latest_update"] = None
+   
     data = get_status(side_report, data)
     data = get_editable(side_report, data)
     data = get_timestamp(meta_tag, data)
     data = get_category(meta_tag, data)
-    data = get_council_sentto(council_tag, data)
+    data = get_council_sentto(council_tag, data, meta_tag)
     data = get_title(side_report, data)
     data = get_description(side_report, data)
     data = get_lat_lon(side_report, data)
+    data = get_method(meta_tag, data)
+    data = get_updates(updates_tag, data)
 
     logging.debug(f"Returning data: {data}")
     return data

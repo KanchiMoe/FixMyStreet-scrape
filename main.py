@@ -15,8 +15,8 @@ load_dotenv()
 
 colourlog.setup_logger()
 
-TRUNCATE_DB_TABLES = True
-UPPER_NUMBER = 7519070
+TRUNCATE_DB_TABLES = False
+UPPER_NUMBER = 7519490
 USE_RANDOM = True  # Set to True to use random numbers
 
 def get_random_number():
@@ -34,7 +34,7 @@ def scrape_fms(number: int):
     # Get the report page
     response_content = src.get_report_page(data["number"])
 
-    if response_content in ("404", "410"):
+    if response_content in ("404", "403", "410"):
         msg = f"Response code was {response_content}. Entry recorded, nothing more to process. Moving on..."
         logging.warning(msg)
         time.sleep(1)
