@@ -4,7 +4,6 @@ import src.colourlog as colourlog
 from dotenv import load_dotenv
 import logging
 import os
-import random
 import time
 
 load_dotenv()
@@ -16,13 +15,10 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
 
 colourlog.setup_logger()
 
-TRUNCATE_DB_TABLES = False
+TRUNCATE_DB_TABLES = True
 UPPER_NUMBER = 7519490
 USE_RANDOM = True  # Set to True to use random numbers
-
-def get_random_number():
-    logging.debug("Getting random number...")
-    return random.randint(1, UPPER_NUMBER)
+FOOBAR = 2014736
 
 def scrape_fms(number: int):
     data = {"number": number}
@@ -52,10 +48,15 @@ def scrape_fms(number: int):
 def main():
     src.truncate(TRUNCATE_DB_TABLES)
 
+    if FOOBAR:
+        logging.info("Only processing 1 number")
+        scrape_fms(FOOBAR)
+        return
+
     if USE_RANDOM:
         logging.info("Using random number sequence")
         while True:
-            number = get_random_number()
+            number = src.get_random_number(UPPER_NUMBER)
             scrape_fms(number)
     else:
         logging.info("Using sequential number sequence")
