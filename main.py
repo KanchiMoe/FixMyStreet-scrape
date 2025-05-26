@@ -50,8 +50,6 @@ def main():
     for number in generator:
         data = {"number": number}
 
-        print("THIS IS WHERE OTHER WORK THINGS NEED TO HAPPEN, LIKE GETTING THE PAGE")
-
         # Get the report page
         response_content = src.get_report_page(data["number"])
 
