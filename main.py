@@ -16,7 +16,7 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
 colourlog.setup_logger()
 
 TRUNCATE_DB_TABLES = False
-UPPER_NUMBER = 7519490
+UPPER_NUMBER = 7538001
 SINGLE_NUMBER = 2
 STRATEGY = "r"
 
