@@ -4,61 +4,69 @@ import src.colourlog as colourlog
 from dotenv import load_dotenv
 import logging
 import os
-import random
 import time
 
+load_dotenv()
+
+# Set logging variables
 DEFAULT_LOG_LEVEL = os.environ.get("LOG_LEVEL") or logging.DEBUG
 logging.getLogger().setLevel(DEFAULT_LOG_LEVEL)
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
 
-load_dotenv()
-
 colourlog.setup_logger()
 
 TRUNCATE_DB_TABLES = False
-UPPER_NUMBER = 7519490
-USE_RANDOM = True  # Set to True to use random numbers
-
-def get_random_number():
-    logging.debug("Getting random number...")
-    return random.randint(1, UPPER_NUMBER)
-
-def scrape_fms(number: int):
-    data = {"number": number}
-
-    # Check if the number is already in the database
-    if src.is_number_in_db(data["number"]):
-        print(f"ID {data['number']} is already in the database. Trying again...")
-        return  # Skip this number
-
-    # Get the report page
-    response_content = src.get_report_page(data["number"])
-
-    if response_content in ("404", "403", "410"):
-        msg = f"Response code was {response_content}. Entry recorded, nothing more to process. Moving on..."
-        logging.warning(msg)
-        time.sleep(1)
-        return
-
-    # Process the page and insert into DB
-    data = src.process_report_content(response_content, data)
-    src.SQL_insert_into_db(data)
-
-    print("=" * 50)
-    time.sleep(1)
+UPPER_NUMBER = 7538001
+SINGLE_NUMBER = 2
+STRATEGY = "r"
 
 def main():
+    generator = None
+
+    # process truncate variable
     src.truncate(TRUNCATE_DB_TABLES)
 
-    if USE_RANDOM:
-        logging.info("Using random number sequence")
-        while True:
-            number = get_random_number()
-            scrape_fms(number)
+    # process strategy
+    if STRATEGY in ("s", "sequential"):
+        generator = src.sequential_strategy(UPPER_NUMBER)
+
+    elif STRATEGY in ("r", "random"):
+        generator = src.random_strategy(UPPER_NUMBER)
+
+    elif STRATEGY in (1, "single"):
+        if SINGLE_NUMBER:
+            generator = src.single_strategy(SINGLE_NUMBER)
+        else:
+            msg = f"Value of SINGLE_NUMBER not allowed. Value: {SINGLE_NUMBER}"
+            logging.critical(msg)
+            raise ValueError(msg)
+
     else:
-        logging.info("Using sequential number sequence")
-        for number in range(1, UPPER_NUMBER + 1):
-            scrape_fms(number)
+        msg = f"Unknown or none strategy given. Was given: {STRATEGY}"
+        logging.critical(msg)
+        raise ValueError(msg)
+    
+    # process
+    for number in generator:
+        data = {"number": number}
+
+        # Get the report page
+        response_content = src.get_report_page(data["number"])
+
+        # Escape if response was anything but 200
+        if response_content in ("404", "403", "410"):
+            msg = f"Response code was {response_content}. Entry recorded, nothing more to process. Moving on..."
+            logging.warning(msg)
+            print("=" * 50)
+            time.sleep(1)
+            continue
+
+        # Process the page and insert into DB
+        data = src.process_report_content(response_content, data)
+        src.SQL_insert_into_db(data)
+
+        print("=" * 50)
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()

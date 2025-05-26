@@ -101,3 +101,16 @@ def SQL_insert_into_db(data):
     insert_updates(data["number"], data["updates"], data["latest_update"])
 
     return None
+
+def SQL_count_number_of_rows():
+    logging.debug("Counting the number of rows in the DB...")
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            SELECT count(*) FROM status
+            """,
+            ()
+        )
+        result = cursor.fetchone()
+        return result[0]

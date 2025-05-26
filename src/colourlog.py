@@ -2,8 +2,8 @@ import logging
 
 class ColorFormatter(logging.Formatter):
     COLORS = {
-        'WARNING': '\033[93m',   # Yellow
-        'ERROR':   '\033[91m',   # Red
+        'WARNING': '\033[93m',         # Yellow
+        'ERROR':   '\033[91m',         # Red
         'CRITICAL':'\033[91m\033[1m',  # Red + Bold
         'RESET':   '\033[0m'
     }
@@ -28,7 +28,7 @@ def setup_logger(level=logging.DEBUG):
 setup_logger()
 
 # Test logs
-logging.debug('Debug message')       # No color
+logging.debug('Debug message')        # No color
 logging.info('Info message')          # No color
 logging.warning('Warning message')    # Yellow
 logging.error('Error message')        # Red
