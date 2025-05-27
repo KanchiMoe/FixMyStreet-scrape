@@ -56,6 +56,12 @@ CREATE TABLE "public"."updates" (
   "latest_timestamp" TIMESTAMP WITH TIME ZONE NULL,
   CONSTRAINT "PK_updates" PRIMARY KEY ("id")
 );
+
+CREATE TABLE "public"."logs" ( 
+  "id" INTEGER NOT NULL,
+  "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT "PK_logs" PRIMARY KEY ("id")
+);
 ```
 
 

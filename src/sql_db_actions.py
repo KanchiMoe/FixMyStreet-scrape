@@ -2,6 +2,7 @@ import logging
 import psycopg2 # type: ignore 
 from psycopg2.extras import DictCursor # type: ignore
 import time
+from datetime import datetime, timezone
 
 def truncate(bool):
     if bool:
@@ -16,6 +17,7 @@ def truncate(bool):
                 TRUNCATE TABLE "public"."location";
                 TRUNCATE TABLE "public"."method";
                 TRUNCATE TABLE "public"."updates";
+                TRUNCATE TABLE "public"."logs";
                 """,
                 ()
             )
@@ -92,6 +94,23 @@ def insert_updates(number: int, no_of_updates, latest_update):
             (number, no_of_updates, latest_update)
         )
 
+def insert_log(number: int):
+    logging.debug("Writing log to DB...")
+
+    # get timestamp
+    timestamp = datetime.now(timezone.utc)
+
+    # write to db
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            INSERT INTO logs (id, timestamp)
+            VALUES (%s, %s)
+            """,
+            (number, timestamp)
+        )
+
 def SQL_insert_into_db(data):
     
     insert_status(data["number"], data["status"], data["timestamp"], data["editable"])
@@ -99,6 +118,7 @@ def SQL_insert_into_db(data):
     insert_location(data["number"], data["lat"], data["lon"], data["council"])
     insert_methods(data["number"], data["method"])
     insert_updates(data["number"], data["updates"], data["latest_update"])
+    insert_log(data["number"])
 
     return None
 
