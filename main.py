@@ -21,6 +21,9 @@ SINGLE_NUMBER = 2
 STRATEGY = "r"
 
 def main():
+    # Do a DB integrity check before continuing
+    src.integrity_check()
+
     generator = None
 
     # process truncate variable
