@@ -13,8 +13,7 @@ def sequential_strategy(highest_number: int):
         # Check if number is already in db
         if src.is_number_in_db(number):
             logging.info("Skipping this number...")
-            print("=" * 50)
-            time.sleep(1)
+            print("=" * 80)
             continue # skip number
 
         yield number # else return/yield
