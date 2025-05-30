@@ -16,7 +16,7 @@ def sequential_strategy(highest_number: int):
             print("=" * 50)
             time.sleep(1)
             continue # skip number
-        print("CCCC")
+
         yield number # else return/yield
     return
 
