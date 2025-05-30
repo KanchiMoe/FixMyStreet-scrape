@@ -1,6 +1,5 @@
 import logging
 import src
-import time
 
 def is_done(highest_number: int):
     return src.SQL_count_number_of_rows() == highest_number
