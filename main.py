@@ -60,16 +60,14 @@ def main():
         if response_content in ("404", "403", "410"):
             msg = f"Response code was {response_content}. Entry recorded, nothing more to process. Moving on..."
             logging.warning(msg)
-            print("=" * 50)
-            time.sleep(1)
+            src.end_of_processing()
             continue
 
         # Process the page and insert into DB
         data = src.process_report_content(response_content, data)
         src.SQL_insert_into_db(data)
 
-        print("=" * 50)
-        time.sleep(1)
+        src.end_of_processing()
 
 if __name__ == "__main__":
     main()
