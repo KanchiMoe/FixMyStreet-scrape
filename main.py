@@ -54,22 +54,36 @@ def main():
         data = {"number": number}
 
         # Get the report page
-        response_content = src.get_report_page(data["number"])
+        response_content, reason = src.get_report_page(data["number"])
 
         # Escape if response was anything but 200
         if response_content in ("404", "403", "410"):
+            src.SQL_insert_into_db({
+                "number": number,
+                "status": f"N/a - {response_content}",
+                "editable": False,
+                "timestamp": None,
+                "category": f"N/a - {response_content}",
+                "title": f"N/a - HTTP {response_content}, {reason}",
+                "description": f"N/a - HTTP {response_content}, {reason}",
+                "lat": 0.0,
+                "lon": 0.0,
+                "council": "N/a",
+                "method": f"N/a - {response_content}",
+                "updates": 0,
+                "latest_update": None
+                }
+            )
             msg = f"Response code was {response_content}. Entry recorded, nothing more to process. Moving on..."
             logging.warning(msg)
-            print("=" * 50)
-            time.sleep(1)
+            src.end_of_processing()
             continue
 
         # Process the page and insert into DB
         data = src.process_report_content(response_content, data)
         src.SQL_insert_into_db(data)
 
-        print("=" * 50)
-        time.sleep(1)
+        src.end_of_processing()
 
 if __name__ == "__main__":
     main()

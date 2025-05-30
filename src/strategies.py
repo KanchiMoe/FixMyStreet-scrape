@@ -1,6 +1,5 @@
 import logging
 import src
-import time
 
 def is_done(highest_number: int):
     return src.SQL_count_number_of_rows() == highest_number
@@ -13,10 +12,9 @@ def sequential_strategy(highest_number: int):
         # Check if number is already in db
         if src.is_number_in_db(number):
             logging.info("Skipping this number...")
-            print("=" * 50)
-            time.sleep(1)
+            print("=" * 80)
             continue # skip number
-        print("CCCC")
+
         yield number # else return/yield
     return
 
