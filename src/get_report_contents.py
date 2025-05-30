@@ -77,7 +77,8 @@ def get_category(meta_tag, data):
     # Allow optional "via ... " part
     match = re.search(r"Reported(?: via \w+)? in the (.*?) category", text)
     if not match:
-        logging.warning(f"Category not found in meta info: {text}")
+        logging.warning(f"Category not found in meta info")
+        logging.debug(f"Text: {text}")
         data["category"] = "N/a"
         return data
         
@@ -212,7 +213,8 @@ def get_method(meta_tag, data):
         logging.info(f"Report method: {method}")
         data["method"] = method
     else:
-        logging.warning(f"No method found in meta info: {text}")
+        logging.warning(f"No report method found in meta info")
+        logging.debug(f"Text: {text}")
         data["method"] = "N/a"
 
     return data
