@@ -16,11 +16,14 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
 colourlog.setup_logger()
 
 TRUNCATE_DB_TABLES = False
-UPPER_NUMBER = 7538001
+UPPER_NUMBER = 7622990
 SINGLE_NUMBER = 2
 STRATEGY = "r"
 
 def main():
+    # Do a DB integrity check before continuing
+    src.integrity_check()
+
     generator = None
 
     # process truncate variable
