@@ -16,13 +16,18 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s")
 colourlog.setup_logger()
 
 TRUNCATE_DB_TABLES = False
-UPPER_NUMBER = 7622990
 SINGLE_NUMBER = 2
 STRATEGY = "r"
 
 def main():
     # Do a DB integrity check before continuing
     src.integrity_check()
+
+    # Do autofind the highest report ID
+    src.autofind_highest_report_id()
+
+    # get upper number from DB
+    upper_number = src.SQL_get_UPPER_NUMBER()
 
     generator = None
 
@@ -31,10 +36,10 @@ def main():
 
     # process strategy
     if STRATEGY in ("s", "sequential"):
-        generator = src.sequential_strategy(UPPER_NUMBER)
+        generator = src.sequential_strategy(upper_number)
 
     elif STRATEGY in ("r", "random"):
-        generator = src.random_strategy(UPPER_NUMBER)
+        generator = src.random_strategy(upper_number)
 
     elif STRATEGY in (1, "single"):
         if SINGLE_NUMBER:
