@@ -19,9 +19,13 @@ PGDATABASE = fms
 
 ### Auto-find current highest report ID
 
-The highest report ID on FixMyStreet grows each day, meaning you have to constantly increase this value. This feature aims to solve that problem by trying to find what the current highest report ID is.
+FixMyStreet report IDs increase daily, requiring regular updates to track the latest one. This feature automates that process by identifying the current highest report ID.
 
-It uses the value of `UPPER_NUMBER` from the meta table and counts up sequentially. If the response is 404, it keeps a counter of how many 404s it has encountered consecutively. If it hits 5 404s consecutively, it takes the last non-404 response (be it, 200, 403, 410, etc) and stores that as the newest `UPPER_NUMBER`.
+It begins at the `UPPER_NUMBER` value stored in the meta table and increments sequentially. For each ID, it checks the response status:
+
+* If the response is a 404, it increments a consecutive failure counter.
+
+* After 5 consecutive 404s, it assumes the last successful response (e.g., 200, 403, 410) was the highest valid ID and updates `UPPER_NUMBER` accordingly.
 
 ## Database
 
