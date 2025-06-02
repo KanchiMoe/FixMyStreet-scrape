@@ -134,3 +134,19 @@ def SQL_count_number_of_rows():
         )
         result = cursor.fetchone()
         return result[0]
+
+def SQL_get_UPPER_NUMBER():
+    logging.debug("Getting UPPER_NUMBER from meta DB...")
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            SELECT value FROM meta
+            WHERE key = 'UPPER_NUMBER';
+            """,
+            ()
+        )
+        result = cursor.fetchone()
+        
+        logging.info(f"Got {result[0]} as UPPER_NUMBER from DB...")
+        return int(result[0])
