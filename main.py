@@ -23,6 +23,9 @@ def main():
     # Do a DB integrity check before continuing
     src.integrity_check()
 
+    # Do autofind the highest report ID
+    src.autofind_highest_report_id()
+
     # get upper number from DB
     upper_number = src.SQL_get_UPPER_NUMBER()
 
