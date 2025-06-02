@@ -152,7 +152,7 @@ def SQL_get_UPPER_NUMBER():
         return int(result[0])
 
 def SQL_update_upper_number(new_upper_number: int):
-    logging.debug(f"Updating UPPER_NUMBER in DB to {new_upper_number}... ")
+    logging.info(f"Updating UPPER_NUMBER in DB to {new_upper_number}... ")
     with psycopg2.connect() as psql:
         cursor = psql.cursor(cursor_factory=DictCursor)
         cursor.execute(
@@ -162,6 +162,18 @@ def SQL_update_upper_number(new_upper_number: int):
             WHERE key = 'UPPER_NUMBER';
             """,
             (new_upper_number, )
+        )
+    
+    logging.info("Updating run_AFH to 0 as we've just done a run...")
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            UPDATE meta
+            SET value = '0'
+            WHERE key = 'run_AFH';
+            """,
+            ()
         )
 
 def SQL_check_autofind_should_run():
