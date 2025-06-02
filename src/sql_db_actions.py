@@ -150,3 +150,16 @@ def SQL_get_UPPER_NUMBER():
         
         logging.info(f"Got {result[0]} as UPPER_NUMBER from DB...")
         return int(result[0])
+
+def SQL_update_upper_number(new_upper_number: int):
+    logging.debug(f"Updating UPPER_NUMBER in DB to {new_upper_number}... ")
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            UPDATE meta
+            SET value = '%s'
+            WHERE key = 'UPPER_NUMBER';
+            """,
+            (new_upper_number, )
+        )
