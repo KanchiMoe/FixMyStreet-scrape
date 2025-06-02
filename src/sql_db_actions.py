@@ -163,3 +163,19 @@ def SQL_update_upper_number(new_upper_number: int):
             """,
             (new_upper_number, )
         )
+
+def SQL_check_autofind_should_run():
+    logging.debug("Getting run_AFH value from DB...")
+    with psycopg2.connect() as psql:
+        cursor = psql.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            """
+            SELECT value FROM meta
+            WHERE key = 'run_AFH';
+            """,
+            ()
+        )
+        result = cursor.fetchone()
+        
+        logging.info(f"Got {result[0]} as run_AFH from DB...")
+        return int(result[0])
