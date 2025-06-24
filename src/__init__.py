@@ -7,3 +7,4 @@ from .strategies import sequential_strategy, single_strategy, random_strategy
 from .db_integrity_check import integrity_check
 from .end_processing import end_of_processing
 from .autofind_highest import autofind_highest_report_id
+from .fms_init import fms_init_main
