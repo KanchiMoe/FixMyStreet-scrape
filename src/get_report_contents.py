@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 import logging
 import re
 
@@ -41,6 +41,26 @@ def get_editable(side_report, data):
     logging.info(f"Editable: {data['editable']}")
     return data
 
+def get_previous_weekday(target_weekday):
+    """Return the most recent past date for a given weekday name (e.g., 'Monday')."""
+    today = datetime.today()
+    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    # Normalize for consistent matching
+    target_weekday = target_weekday.capitalize()
+
+    try:
+        target_index = weekdays.index(target_weekday)
+    except ValueError:
+        raise ValueError(f"Unknown weekday name: {target_weekday}")
+
+    today_index = today.weekday()
+    days_difference = (today_index - target_index) % 7
+    if days_difference == 0:
+        days_difference = 7  # Go back to previous week if it's the same day
+
+    return today - timedelta(days=days_difference)
+
 def get_timestamp(meta_tag, data):
     logging.debug("Getting timestamp...")
 
@@ -59,13 +79,22 @@ def get_timestamp(meta_tag, data):
         data["timestamp"] = parsed_time
         return data
 
-    # Try matching partial (e.g., just weekday)
-    match_partial = re.search(r"at (\d{1,2}:\d{2},\s\w+)", text)
+    # Handle partial timestamp like "at 10:32, Monday"
+    match_partial = re.search(r"at (\d{1,2}:\d{2}),\s(\w+)", text)
     if match_partial:
-        time_str = match_partial.group(1)
-        logging.warning(f"Partial timestamp found (weekday only): {time_str}. Skipping precise datetime.")
-        data["timestamp"] = None  # or set a fallback if needed
-        return data
+        time_part, weekday = match_partial.groups()
+        logging.debug(f"Partial timestamp found: {time_part}, {weekday}")
+        try:
+            date_part = get_previous_weekday(weekday)
+            time_obj = datetime.strptime(time_part, "%H:%M").time()
+            full_datetime = datetime.combine(date_part.date(), time_obj)
+            logging.info(f"Resolved partial timestamp to: {full_datetime}")
+            data["timestamp"] = full_datetime
+            return data
+        except Exception as e:
+            logging.critical(f"Failed to resolve partial timestamp: {e}")
+            data["timestamp"] = None
+            return data
 
     raise ValueError(f"Could not parse timestamp from meta info text: {text}")
 
@@ -236,15 +265,16 @@ def get_update_timestamp(updates_tag):
         for tag in reversed(meta_tags):
             text = tag.get_text(strip=True)
             logging.debug(f"Checking update meta text: {text}")
-            # Match both formats: with or without 'at'
-            match = re.search(r"(?:(?:at\s)?)(\d{1,2}:\d{2}),\s+(\w{3,9})\s+(\d{1,2})\s+(\w+)\s+(\d{4})", text)
+
+            # Try full timestamp first
+            match = re.search(r"(\d{1,2}:\d{2}),\s+(\w{3,9})\s+(\d{1,2})\s+(\w+)\s+(\d{4})", text)
             if match:
                 time_str = f"{match.group(1)}, {match.group(2)} {match.group(3)} {match.group(4)} {match.group(5)}"
                 try:
                     parsed_time = datetime.strptime(time_str, "%H:%M, %a %d %B %Y")
                     logging.info(f"Latest update timestamp parsed: {parsed_time}")
                     return parsed_time
-                except ValueError as e:
+                except ValueError:
                     try:
                         parsed_time = datetime.strptime(time_str, "%H:%M, %A %d %B %Y")
                         logging.info(f"Latest update timestamp parsed: {parsed_time}")
@@ -252,6 +282,21 @@ def get_update_timestamp(updates_tag):
                     except Exception as e2:
                         logging.warning(f"Failed to parse timestamp '{time_str}': {e2}")
                         continue
+
+            # Try partial timestamp: e.g. "at 10:32, Monday"
+            match_partial = re.search(r"at (\d{1,2}:\d{2}),\s(\w+)", text)
+            if match_partial:
+                time_part, weekday = match_partial.groups()
+                logging.debug(f"Partial update timestamp found: {time_part}, {weekday}")
+                try:
+                    date_part = get_previous_weekday(weekday)
+                    time_obj = datetime.strptime(time_part, "%H:%M").time()
+                    full_datetime = datetime.combine(date_part.date(), time_obj)
+                    logging.info(f"Resolved update partial timestamp to: {full_datetime}")
+                    return full_datetime
+                except Exception as e:
+                    logging.critical(f"Failed to resolve partial update timestamp: {e}")
+                    continue
 
     msg = "No valid update timestamp found in updates."
     logging.critical(msg)
